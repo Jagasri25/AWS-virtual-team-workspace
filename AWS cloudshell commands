@@ -1,0 +1,47 @@
+#TO CREATE VPC
+aws ec2 create-vpc --cidr-block 10.0.0.0/16
+
+#TO CREATE PUBLIC AND PRIVATE SUBNETS TO THE VPC
+# Public Subnets
+aws ec2 create-subnet --vpc-id vpc-0dc07344972f2fdfa --cidr-block 10.0.1.0/24 --availability-zone us-east-1a
+aws ec2 create-subnet --vpc-id vpc-0dc07344972f2fdfa --cidr-block 10.0.2.0/24 --availability-zone us-east-1b
+aws ec2 create-subnet --vpc-id vpc-0dc07344972f2fdfa --cidr-block 10.0.3.0/24 --availability-zone us-east-1c
+
+# Private Subnets
+aws ec2 create-subnet --vpc-id vpc-0dc07344972f2fdfa --cidr-block 10.0.4.0/24 --availability-zone us-east-1a
+aws ec2 create-subnet --vpc-id vpc-0dc07344972f2fdfa --cidr-block 10.0.5.0/24 --availability-zone us-east-1b
+
+#TO CREATE AND ATTACH THE INTERNET GATEWAY
+aws ec2 create-internet-gateway
+aws ec2 attach-internet-gateway --vpc-id vpc-0dc07344972f2fdfa --internet-gateway-id igw-05cf7bb68d53717c1
+
+#TO CREATE PUBLIC ROUTE TABLES AND ROUTES
+# Public Route Table
+aws ec2 create-route-table --vpc-id vpc-0dc07344972f2fdfa
+aws ec2 create-route --route-table-id rtb-0bjln57761b8vb356 --destination-cidr-block 0.0.0.0/0 --gateway-id igw-05cf7bb68d53717c1
+
+# Associate Public Subnets with Route Table
+aws ec2 associate-route-table --subnet-id subnet-0w6njxsd543d4x3az --route-table-id rtb-0bjln57761b8vb356
+aws ec2 associate-route-table --subnet-id subnet-0hs56dnwx25sxkms2 --route-table-id rtb-0bjln57761b8vb356
+aws ec2 associate-route-table --subnet-id subnet-0dbhj595dcm26dc5e --route-table-id rtb-0bjln57761b8vb356
+
+#TO CREATE NAT GATEWAY
+aws ec2 allocate-address --domain vpc
+aws ec2 create-nat-gateway --subnet-id subnet-0w6njxsd543d4x3az --allocation-id <EIP_ALLOCATION_ID>
+
+#TO CREATE ROUTE TABLE FOR PRIVATE SUBNETS
+aws ec2 create-route-table --vpc-id vpc-0dc07344972f2fdfa
+aws ec2 create-route --route-table-id rtb-0ef62csafx4xa338e --destination-cidr-block 0.0.0.0/0 --nat-gateway-id nat-01178f80e213db785
+
+# Associate Private Subnets with Private Route Table
+aws ec2 associate-route-table --subnet-id subnet-0mds46sdxs6daxq13 --route-table-id rtb-0ef62csafx4xa338e
+aws ec2 associate-route-table --subnet-id subnet-013rfed2cs3xqw895 --route-table-id rtb-0ef62csafx4xa338e
+#TO CREATE DB SUBNET GROUP
+aws rds create-db-subnet-group --db-subnet-group-name mydbsubnetgroup --db-subnet-group-description "My DB Subnet Group" --subnet-ids subnet-0mds46sdxs6daxq13 subnet-013rfed2cs3xqw895
+
+#TO CREATE RDS INSTANCE
+aws rds create-db-instance --db-instance-identifier mydbinstance --db-instance-class db.t2.micro --engine mysql --allocated-storage 20 --master-username admin --master-user-password mypassword --db-subnet-group-name mydbsubnetgroup
+
+#CREATE WORKSPACE DIRECTORY AND WORKSPACES
+aws workspaces create-directory --directory-id d-0645633121 --subnet-ids subnet-0w6njxsd543d4x3az subnet-0hs56dnwx25sxkms2
+aws workspaces create-workspaces --directory-id d-0645633121 --workspaces DirectoryId=d-0645633121,UserName=Jasmine25,BundleId=ws0bk42smfw
